@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Markdown 笔记</string>
+    <string name="widget_name">MD 笔记</string>
+    <string name="new_note">新建笔记</string>
+    <string name="edit_note">编辑笔记</string>
+    <string name="edit_tab">编辑</string>
+    <string name="preview_tab">预览</string>
+    <string name="delete_note">删除笔记</string>
+    <string name="delete_confirm">确定要删除「%1$s」吗？</string>
+    <string name="rename_note">重命名</string>
+    <string name="note_title_hint">输入标题…</string>
+    <string name="note_content_hint">开始写 Markdown…</string>
+    <string name="no_notes">还没有笔记\n点击右下角 + 创建第一个</string>
+    <string name="search_hint">搜索笔记…</string>
+    <string name="sort_by_modified">按修改时间</string>
+    <string name="sort_by_title">按标题</string>
+    <string name="select_directory">选择笔记目录</string>
+    <string name="directory_not_set">未设置笔记目录</string>
+</resources>
