@@ -4,12 +4,12 @@ import android.content.Context
 import android.util.Log
 import com.hermes.mdnotes.data.NotesRepository
 import com.hermes.mdnotes.data.PreferencesManager
-import java.io.File
 
 data class WidgetNote(
     val title: String,
     val preview: String,
     val filePath: String,
+    val lastModified: Long,
 )
 
 object WidgetDataProvider {
@@ -17,13 +17,13 @@ object WidgetDataProvider {
     fun loadNotes(context: Context): List<WidgetNote> {
         return try {
             val repo = NotesRepository.getInstance(context)
-            // 同步目录：优先用持久化路径
             val savedDir = PreferencesManager.getNotesDirectory(context)
             if (savedDir != null) {
                 repo.setNotesDirectory(savedDir)
             }
             repo.ensureDirectory()
             repo.refreshNotes()
+            // 按修改时间降序，最新的在前
             repo.filteredNotes(sortByModified = true)
                 .take(8)
                 .map { n ->
@@ -31,6 +31,7 @@ object WidgetDataProvider {
                         title = n.title,
                         preview = n.preview,
                         filePath = n.filePath,
+                        lastModified = n.lastModified,
                     )
                 }
         } catch (e: Exception) {

@@ -16,12 +16,15 @@ import androidx.glance.layout.*
 import androidx.glance.text.*
 import androidx.glance.unit.ColorProvider
 import com.hermes.mdnotes.editor.EditorActivity
+import java.text.SimpleDateFormat
+import java.util.*
 
 class NotesWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val notes = WidgetDataProvider.loadNotes(context)
         val newNoteIntent = Intent(context, EditorActivity::class.java)
+        val dateFmt = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
         provideContent {
             GlanceTheme {
@@ -31,10 +34,11 @@ class NotesWidget : GlanceAppWidget() {
                         .padding(8.dp)
                         .background(ColorProvider(Color(0xFF1C1B1F))),
                 ) {
+                    // ── 标题栏 ──────────────────────
                     Row(
                         modifier = GlanceModifier
                             .fillMaxWidth()
-                            .padding(bottom = 6.dp),
+                            .padding(bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -57,8 +61,10 @@ class NotesWidget : GlanceAppWidget() {
                         )
                     }
 
+                    // ── 计数 + 排序说明 ──────────────
                     Text(
-                        text = "${notes.size} 条笔记",
+                        text = if (notes.isEmpty()) "暂无笔记"
+                               else "${notes.size} 条 · 按时间↓",
                         style = TextStyle(
                             color = ColorProvider(Color(0xFF888888)),
                             fontSize = 11.sp,
@@ -66,9 +72,10 @@ class NotesWidget : GlanceAppWidget() {
                         modifier = GlanceModifier.padding(bottom = 4.dp),
                     )
 
+                    // ── 笔记列表 ────────────────────
                     if (notes.isEmpty()) {
                         Text(
-                            text = "暂无笔记，点击 + 创建",
+                            text = "点击右上角 + 创建第一条笔记",
                             style = TextStyle(
                                 color = ColorProvider(Color(0xFF666666)),
                                 fontSize = 13.sp,
@@ -85,19 +92,34 @@ class NotesWidget : GlanceAppWidget() {
                                 Column(
                                     modifier = GlanceModifier
                                         .fillMaxWidth()
-                                        .padding(vertical = 3.dp)
+                                        .padding(vertical = 2.dp)
                                         .background(ColorProvider(Color(0xFF2D2D30)))
                                         .padding(8.dp)
                                         .clickable(actionStartActivity(editIntent)),
                                 ) {
-                                    Text(
-                                        text = note.title,
-                                        style = TextStyle(
-                                            color = ColorProvider(Color(0xFFE6E1E5)),
-                                            fontSize = 14.sp,
-                                        ),
-                                        maxLines = 1,
-                                    )
+                                    // 标题行 + 时间
+                                    Row(
+                                        modifier = GlanceModifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                    ) {
+                                        Text(
+                                            text = note.title,
+                                            style = TextStyle(
+                                                color = ColorProvider(Color(0xFFE6E1E5)),
+                                                fontSize = 14.sp,
+                                            ),
+                                            maxLines = 1,
+                                            modifier = GlanceModifier.defaultWeight(),
+                                        )
+                                        Text(
+                                            text = dateFmt.format(Date(note.lastModified)),
+                                            style = TextStyle(
+                                                color = ColorProvider(Color(0xFF666666)),
+                                                fontSize = 10.sp,
+                                            ),
+                                        )
+                                    }
+                                    // 预览
                                     if (note.preview.isNotBlank()) {
                                         Text(
                                             text = note.preview,
