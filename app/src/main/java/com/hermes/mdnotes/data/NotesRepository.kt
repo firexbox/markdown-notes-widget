@@ -34,6 +34,8 @@ class NotesRepository private constructor(private val fileManager: FileStorageMa
 
     fun getNotesDirectory(): File? = _notesDir.value
 
+    fun getFileManager(): FileStorageManager = fileManager
+
     fun ensureDirectory(): File = fileManager.ensureDirectory()
 
     // ── 笔记操作 ──────────────────────────────────
@@ -42,15 +44,16 @@ class NotesRepository private constructor(private val fileManager: FileStorageMa
         _notes.value = fileManager.listNotesSync()
     }
 
-    fun createNote(title: String, content: String = ""): Note {
+    fun createNote(title: String, content: String = ""): Note? {
         val note = fileManager.createNote(title, content)
-        refreshNotes()
+        if (note != null) refreshNotes()
         return note
     }
 
     fun saveNote(filePath: String, title: String, content: String) {
-        fileManager.saveNote(filePath, title, content)
-        refreshNotes()
+        if (fileManager.saveNote(filePath, title, content)) {
+            refreshNotes()
+        }
     }
 
     fun deleteNote(filePath: String): Boolean {
@@ -104,8 +107,9 @@ class NotesRepository private constructor(private val fileManager: FileStorageMa
         fun getInstance(context: Context): NotesRepository {
             return INSTANCE ?: synchronized(this) {
                 INSTANCE ?: run {
-                    val defaultDir = File(context.filesDir, "notes")
-                    val repo = NotesRepository(FileStorageManager(defaultDir))
+                    val dir = PreferencesManager.getNotesDirectory(context)
+                        ?: File(context.filesDir, "notes").also { it.mkdirs() }
+                    val repo = NotesRepository(FileStorageManager(dir))
                     INSTANCE = repo
                     repo
                 }

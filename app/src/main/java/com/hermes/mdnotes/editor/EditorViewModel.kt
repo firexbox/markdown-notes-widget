@@ -48,11 +48,12 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
      * 加载已有笔记进行编辑
      */
     fun loadNote(filePath: String) {
-        val note = repository.notes.value.find { it.filePath == filePath }
+        val content = repository.readNoteContent(filePath)
+        val note = repository.filteredNotes().find { it.filePath == filePath }
         if (note != null) {
             _note.value = note
             _title.value = note.title
-            _content.value = repository.readNoteContent(filePath)
+            _content.value = content
             _isNewNote.value = false
         }
     }
@@ -96,8 +97,10 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
         } else {
             // 新建笔记
             val newNote = repository.createNote(t, c)
-            _note.value = newNote
-            _isNewNote.value = false
+            if (newNote != null) {
+                _note.value = newNote
+                _isNewNote.value = false
+            }
         }
         _isSaving.value = true
         hasChanges = false

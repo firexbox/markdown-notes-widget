@@ -28,6 +28,32 @@ class FileStorageManager(private var notesDir: File) {
         return notesDir
     }
 
+    // ── 目录迁移 ──────────────────────────────────
+
+    /**
+     * 将旧目录中的所有 .md 文件拷贝到当前目录
+     * @return 成功拷贝的数量
+     */
+    fun migrateFilesFrom(sourceDir: File): Int {
+        if (!sourceDir.exists() || !sourceDir.isDirectory) return 0
+        ensureDirectory()
+        var count = 0
+        sourceDir.listFiles { f -> f.isFile && f.extension.equals("md", ignoreCase = true) }
+            ?.forEach { sourceFile ->
+                val destFile = File(notesDir, sourceFile.name)
+                // 不覆盖已存在的同名文件
+                if (!destFile.exists()) {
+                    try {
+                        sourceFile.copyTo(destFile)
+                        count++
+                    } catch (e: Exception) {
+                        android.util.Log.w("FileStorageManager", "Failed to copy: ${sourceFile.name}", e)
+                    }
+                }
+            }
+        return count
+    }
+
     // ── 读取 ──────────────────────────────────────
 
     /** 列出目录中所有 .md 文件，转为 Note 列表（Flow 方式） */
@@ -84,35 +110,44 @@ class FileStorageManager(private var notesDir: File) {
     // ── 写入 ──────────────────────────────────────
 
     /** 保存笔记（覆盖写入） */
-    fun saveNote(filePath: String, title: String, content: String) {
-        val file = File(filePath)
-        file.parentFile?.mkdirs()
-
-        // 如果内容不以标题开头，自动添加标题
-        val fullContent = if (content.trimStart().startsWith("# ")) {
-            content
-        } else {
-            "# $title\n\n$content"
+    fun saveNote(filePath: String, title: String, content: String): Boolean {
+        return try {
+            val file = File(filePath)
+            file.parentFile?.mkdirs()
+            val fullContent = if (content.trimStart().startsWith("# ")) {
+                content
+            } else {
+                "# $title\n\n$content"
+            }
+            file.writeText(fullContent)
+            true
+        } catch (e: Exception) {
+            android.util.Log.e("FileStorageManager", "saveNote failed: $filePath", e)
+            false
         }
-        file.writeText(fullContent)
     }
 
     /** 新建笔记 */
-    fun createNote(title: String, initialContent: String = ""): Note {
-        ensureDirectory()
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-        val safeTitle = title.replace(Regex("[/\\\\:*?\"<>|]"), "_").take(50)
-        val fileName = "${timestamp}_$safeTitle.md"
-        val file = File(notesDir, fileName)
-        val content = "# $title\n\n$initialContent"
-        file.writeText(content)
-        return Note(
-            fileName = fileName,
-            filePath = file.absolutePath,
-            title = title,
-            preview = initialContent.take(200),
-            lastModified = file.lastModified(),
-        )
+    fun createNote(title: String, initialContent: String = ""): Note? {
+        return try {
+            ensureDirectory()
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val safeTitle = title.replace(Regex("[/\\\\:*?\"<>|]"), "_").take(50)
+            val fileName = "${timestamp}_$safeTitle.md"
+            val file = File(notesDir, fileName)
+            val content = "# $title\n\n$initialContent"
+            file.writeText(content)
+            Note(
+                fileName = fileName,
+                filePath = file.absolutePath,
+                title = title,
+                preview = initialContent.take(200),
+                lastModified = file.lastModified(),
+            )
+        } catch (e: Exception) {
+            android.util.Log.e("FileStorageManager", "createNote failed", e)
+            null
+        }
     }
 
     // ── 删除与重命名 ──────────────────────────────
