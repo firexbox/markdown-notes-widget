@@ -22,12 +22,24 @@ import java.util.*
 class NotesWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val notes = WidgetDataProvider.loadNotes(context)
+        val allNotes = WidgetDataProvider.loadNotes(context)
         val newNoteIntent = Intent(context, EditorActivity::class.java)
         val dateFmt = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
         provideContent {
             GlanceTheme {
+                // 获取 Widget 实际尺寸
+                val widgetSize = LocalSize.current
+
+                // 估算可容纳条目数
+                // 头部(标题+计数) ≈ 65dp，每条笔记 ≈ 56dp（标题行 24dp + 预览 22dp + 间距 10dp）
+                val headerDp = 65f
+                val itemDp = 56f
+                val availableDp = widgetSize.height.value - headerDp
+                val maxItems = maxOf(1, (availableDp / itemDp).toInt())
+                val displayNotes = allNotes.take(maxItems)
+                val hiddenCount = allNotes.size - displayNotes.size
+
                 Column(
                     modifier = GlanceModifier
                         .fillMaxWidth()
@@ -62,9 +74,13 @@ class NotesWidget : GlanceAppWidget() {
                     }
 
                     // ── 计数 + 排序说明 ──────────────
+                    val countText = when {
+                        allNotes.isEmpty() -> "暂无笔记"
+                        hiddenCount > 0 -> "${displayNotes.size}/${allNotes.size} 条 · 按时间↓"
+                        else -> "${allNotes.size} 条 · 按时间↓"
+                    }
                     Text(
-                        text = if (notes.isEmpty()) "暂无笔记"
-                               else "${notes.size} 条 · 按时间↓",
+                        text = countText,
                         style = TextStyle(
                             color = ColorProvider(Color(0xFF888888)),
                             fontSize = 11.sp,
@@ -73,7 +89,7 @@ class NotesWidget : GlanceAppWidget() {
                     )
 
                     // ── 笔记列表 ────────────────────
-                    if (notes.isEmpty()) {
+                    if (displayNotes.isEmpty()) {
                         Text(
                             text = "点击右上角 + 创建第一条笔记",
                             style = TextStyle(
@@ -84,7 +100,7 @@ class NotesWidget : GlanceAppWidget() {
                         )
                     } else {
                         LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                            items(notes) { note ->
+                            items(displayNotes) { note ->
                                 val editIntent = Intent(context, EditorActivity::class.java).apply {
                                     putExtra(EditorActivity.EXTRA_FILE_PATH, note.filePath)
                                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -97,7 +113,6 @@ class NotesWidget : GlanceAppWidget() {
                                         .padding(8.dp)
                                         .clickable(actionStartActivity(editIntent)),
                                 ) {
-                                    // 标题行 + 时间
                                     Row(
                                         modifier = GlanceModifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -119,7 +134,6 @@ class NotesWidget : GlanceAppWidget() {
                                             ),
                                         )
                                     }
-                                    // 预览
                                     if (note.preview.isNotBlank()) {
                                         Text(
                                             text = note.preview,

@@ -23,9 +23,8 @@ object WidgetDataProvider {
             }
             repo.ensureDirectory()
             repo.refreshNotes()
-            // 按修改时间降序，最新的在前
+            // 按修改时间降序，最新的在前（不限制数量，由 Widget 按尺寸裁剪）
             repo.filteredNotes(sortByModified = true)
-                .take(8)
                 .map { n ->
                     WidgetNote(
                         title = n.title,
