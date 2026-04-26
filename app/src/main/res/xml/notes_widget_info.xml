@@ -8,5 +8,8 @@
     android:minResizeHeight="90dp"
     android:previewImage="@mipmap/ic_launcher"
     android:resizeMode="vertical|horizontal"
+    android:targetCellWidth="3"
+    android:targetCellHeight="2"
     android:updatePeriodMillis="1800000"
-    android:widgetCategory="home_screen" />
+    android:widgetCategory="home_screen"
+    android:widgetFeatures="reconfigurable" />
