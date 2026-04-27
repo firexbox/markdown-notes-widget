@@ -35,7 +35,7 @@ class NotesWidget : GlanceAppWidget() {
                         .padding(8.dp)
                         .background(ColorProvider(Color(0xFF1C1B1F))),
                 ) {
-                    // ── 标题栏 ──────────────────────
+                    // ── 标题栏（保持可工作版本结构）───
                     Row(
                         modifier = GlanceModifier.fillMaxWidth().padding(bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -44,15 +44,6 @@ class NotesWidget : GlanceAppWidget() {
                             text = "📝 MD 笔记",
                             style = TextStyle(color = ColorProvider(Color(0xFFA5D6A7)), fontSize = 16.sp),
                             modifier = GlanceModifier.defaultWeight(),
-                        )
-                        // 刷新按钮
-                        Image(
-                            provider = BitmapFactory.decodeResource(
-                                context.resources, android.R.drawable.ic_popup_sync
-                            ).let { ImageProvider(it) },
-                            contentDescription = "刷新",
-                            modifier = GlanceModifier.size(28.dp)
-                                .clickable(actionStartActivity(refreshIntent)),
                         )
                         // 新建按钮
                         Image(
@@ -65,13 +56,25 @@ class NotesWidget : GlanceAppWidget() {
                         )
                     }
 
-                    // ── 计数 ────────────────────────
-                    Text(
-                        text = if (allNotes.isEmpty()) "暂无笔记"
-                               else "${allNotes.size} 条 · 按时间↓",
-                        style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11.sp),
-                        modifier = GlanceModifier.padding(bottom = 4.dp),
-                    )
+                    // ── 计数 + 刷新 ──────────────
+                    Row(
+                        modifier = GlanceModifier.fillMaxWidth().padding(bottom = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = if (allNotes.isEmpty()) "暂无笔记"
+                                   else "${allNotes.size} 条 · 按时间↓",
+                            style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11.sp),
+                            modifier = GlanceModifier.defaultWeight(),
+                        )
+                        Text(
+                            text = "🔄",
+                            style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 13.sp),
+                            modifier = GlanceModifier
+                                .padding(start = 8.dp)
+                                .clickable(actionStartActivity(refreshIntent)),
+                        )
+                    }
 
                     // ── 笔记列表 ────────────────────
                     if (allNotes.isEmpty()) {
