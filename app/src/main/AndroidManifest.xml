@@ -35,6 +35,14 @@
             android:theme="@style/Theme.MdNotes"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".widget.WidgetRefreshActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:launchMode="singleInstance"
+            android:taskAffinity="" />
+
         <receiver
             android:name=".widget.NotesWidgetReceiver"
             android:exported="false">

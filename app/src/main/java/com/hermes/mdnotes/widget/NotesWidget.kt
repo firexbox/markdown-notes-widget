@@ -24,6 +24,7 @@ class NotesWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val allNotes = WidgetDataProvider.loadNotes(context)
         val newNoteIntent = Intent(context, EditorActivity::class.java)
+        val refreshIntent = Intent(context, WidgetRefreshActivity::class.java)
         val dateFmt = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
         provideContent {
@@ -43,6 +44,15 @@ class NotesWidget : GlanceAppWidget() {
                             text = "📝 MD 笔记",
                             style = TextStyle(color = ColorProvider(Color(0xFFA5D6A7)), fontSize = 16.sp),
                             modifier = GlanceModifier.defaultWeight(),
+                        )
+                        // 刷新按钮
+                        Image(
+                            provider = BitmapFactory.decodeResource(
+                                context.resources, android.R.drawable.ic_popup_sync
+                            ).let { ImageProvider(it) },
+                            contentDescription = "刷新",
+                            modifier = GlanceModifier.size(28.dp)
+                                .clickable(actionStartActivity(refreshIntent)),
                         )
                         // 新建按钮
                         Image(
