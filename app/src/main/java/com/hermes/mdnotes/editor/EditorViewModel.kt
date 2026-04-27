@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.hermes.mdnotes.MdNotesApp
 import com.hermes.mdnotes.data.Note
 import com.hermes.mdnotes.data.NotesRepository
+import com.hermes.mdnotes.widget.NotesWidgetReceiver
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -104,6 +105,8 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
         }
         _isSaving.value = true
         hasChanges = false
+        // 通知 Widget 刷新
+        NotesWidgetReceiver.triggerUpdate(getApplication())
         viewModelScope.launch {
             delay(500)
             _isSaving.value = false
@@ -131,7 +134,6 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
     // ── 生命周期 ─────────────────────────────────
 
     override fun onCleared() {
-        // 确保退出前保存
         if (hasChanges) {
             val t = _title.value.ifBlank { "未命名笔记" }
             val c = _content.value
@@ -141,6 +143,7 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
             } else if (c.isNotBlank()) {
                 repository.createNote(t, c)
             }
+            NotesWidgetReceiver.triggerUpdate(getApplication())
         }
         super.onCleared()
     }
