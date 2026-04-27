@@ -41,8 +41,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var repository: NotesRepository
     private val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
-    // 编辑/新建后滚到底部
+    // 编辑/新建后滚到底部 — 类级 State 桥接 onResume → Composable
     private var pendingScrollToBottom = false
+    private val scrollTrigger = mutableIntStateOf(0)
 
     // ── SAF 目录选择器 ──────────────────────────
 
@@ -159,15 +160,6 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                // 编辑/新建返回后滚到底部
-                var scrollBottomTrigger by remember { mutableIntStateOf(0) }
-                LaunchedEffect(Unit) {
-                    if (pendingScrollToBottom) {
-                        pendingScrollToBottom = false
-                        scrollBottomTrigger++
-                    }
-                }
-
                 NotesListScreen(
                     repository = repository,
                     onNoteClick = { note -> openEditor(note.filePath) },
@@ -186,7 +178,7 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     dateFormat = dateFormat,
-                    scrollBottomTrigger = scrollBottomTrigger,
+                    scrollBottomTrigger = scrollTrigger.intValue,
                 )
             }
         }
@@ -194,6 +186,13 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+
+        // 编辑/新建返回 → 触发滚到底部
+        if (pendingScrollToBottom) {
+            pendingScrollToBottom = false
+            scrollTrigger.intValue++
+        }
+
         // 从设置页返回时：权限刚开启且首次启动未完成 → 自动弹目录选择
         if (PreferencesManager.isFirstLaunch(this) && hasFullStorageAccess()) {
             dirPickerLauncher.launch(null)
