@@ -7,10 +7,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.glance.*
+import androidx.glance.action.ActionParameters
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
+import androidx.glance.appwidget.action.ActionCallback
+import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.action.actionSendBroadcast
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.layout.*
@@ -25,9 +27,6 @@ class NotesWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val allNotes = WidgetDataProvider.loadNotes(context).take(10)
         val newNoteIntent = Intent(context, EditorActivity::class.java)
-        val refreshIntent = Intent(context, NotesWidgetReceiver::class.java).apply {
-            action = NotesWidgetReceiver.ACTION_REFRESH
-        }
         val dateFmt = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
         provideContent {
@@ -38,7 +37,6 @@ class NotesWidget : GlanceAppWidget() {
                         .padding(8.dp)
                         .background(ColorProvider(Color(0xFF1C1B1F))),
                 ) {
-                    // ── 标题栏 ──────────────────────
                     Row(
                         modifier = GlanceModifier.fillMaxWidth().padding(bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -51,7 +49,7 @@ class NotesWidget : GlanceAppWidget() {
                         Text(
                             text = "🔄",
                             style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 16.sp),
-                            modifier = GlanceModifier.clickable(actionSendBroadcast(refreshIntent)),
+                            modifier = GlanceModifier.clickable(actionRunCallback<RefreshAction>()),
                         )
                         Spacer(modifier = GlanceModifier.width(12.dp))
                         Image(
@@ -64,7 +62,6 @@ class NotesWidget : GlanceAppWidget() {
                         )
                     }
 
-                    // ── 计数 ────────────────────────
                     Text(
                         text = if (allNotes.isEmpty()) "暂无笔记"
                                else "${allNotes.size} 条 · 按时间↓",
@@ -72,7 +69,6 @@ class NotesWidget : GlanceAppWidget() {
                         modifier = GlanceModifier.padding(bottom = 4.dp),
                     )
 
-                    // ── 笔记列表 ────────────────────
                     if (allNotes.isEmpty()) {
                         Text(
                             text = "点击右上角 + 创建第一条笔记",
@@ -124,5 +120,18 @@ class NotesWidget : GlanceAppWidget() {
                 }
             }
         }
+    }
+}
+
+/**
+ * 刷新回调 — 直接调用 update()，在 Widget 进程内执行，无广播延迟
+ */
+class RefreshAction : ActionCallback {
+    override suspend fun onAction(
+        context: Context,
+        glanceId: GlanceId,
+        parameters: ActionParameters
+    ) {
+        NotesWidget().update(context, glanceId)
     }
 }

@@ -68,8 +68,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
     // Glance App Widget
-    implementation("androidx.glance:glance-appwidget:1.0.0")
-    implementation("androidx.glance:glance-material3:1.0.0")
+    implementation("androidx.glance:glance-appwidget:1.1.1")
+    implementation("androidx.glance:glance-material3:1.1.1")
 
     // Lifecycle & ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
