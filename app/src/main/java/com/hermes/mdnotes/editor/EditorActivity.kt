@@ -21,10 +21,9 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.viewinterop.AndroidView
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hermes.mdnotes.ui.theme.MdNotesTheme
+import com.mukesh.MarkDown
 
 class EditorActivity : ComponentActivity() {
 
@@ -222,39 +221,12 @@ fun EditorScreen(
 }
 
 /**
- * Markdown 预览 — Markwon 渲染引擎，兼容 Obsidian 常见格式
+ * Markdown 预览 — 使用 MarkdownView-Android Compose 库
  */
 @Composable
 fun MarkdownPreview(content: String, modifier: Modifier = Modifier) {
-    val context = LocalContext.current
-    val markwon = remember {
-        io.noties.markwon.Markwon.builder(context)
-                .usePlugin(io.noties.markwon.core.CorePlugin.create())
-                .usePlugin(io.noties.markwon.ext.strikethrough.StrikethroughPlugin.create())
-                .usePlugin(io.noties.markwon.ext.tables.TablePlugin.create(context))
-                .usePlugin(io.noties.markwon.ext.tasklist.TaskListPlugin.create(context))
-                .build()
-    }
-
-    AndroidView(
-        factory = { ctx ->
-            val scrollView = android.widget.ScrollView(ctx).apply {
-                setFillViewport(true)
-            }
-            val textView = android.widget.TextView(ctx).apply {
-                movementMethod = android.text.method.LinkMovementMethod.getInstance()
-                setTextIsSelectable(true)
-                setPadding(32, 16, 32, 16)
-                textSize = 16f
-            }
-            scrollView.addView(textView)
-            markwon.setMarkdown(textView, content)
-            scrollView
-        },
-        update = { scrollView ->
-            val textView = scrollView.getChildAt(0) as? android.widget.TextView
-            textView?.let { markwon.setMarkdown(it, content) }
-        },
+    MarkDown(
+        text = content,
         modifier = modifier.fillMaxSize()
     )
 }
