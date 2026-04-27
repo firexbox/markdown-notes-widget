@@ -117,7 +117,7 @@ class NotesWidget : GlanceAppWidget() {
                 .fillMaxWidth()
                 .padding(vertical = 2.dp)
                 .background(GlanceTheme.colors.secondaryContainer)
-                .cornerRadius(8.dp)
+                .cornerRadius(4.dp)
                 .clickable(actionStartActivity(intent))
                 .padding(8.dp)
         ) {
