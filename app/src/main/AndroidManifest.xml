@@ -39,6 +39,10 @@
             android:name=".widget.WidgetRefreshActivity"
             android:exported="false" />
 
+        <service
+            android:name=".widget.WidgetRefreshService"
+            android:exported="false" />
+
         <receiver
             android:name=".widget.NotesWidgetReceiver"
             android:exported="false">

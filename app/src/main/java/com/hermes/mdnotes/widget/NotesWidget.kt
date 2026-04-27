@@ -10,6 +10,7 @@ import androidx.glance.*
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
 import androidx.glance.appwidget.action.actionStartActivity
+import androidx.glance.appwidget.action.actionStartService
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.layout.*
@@ -24,7 +25,7 @@ class NotesWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val allNotes = WidgetDataProvider.loadNotes(context)
         val newNoteIntent = Intent(context, EditorActivity::class.java)
-        val refreshIntent = Intent(context, WidgetRefreshActivity::class.java)
+        val refreshIntent = Intent(context, WidgetRefreshService::class.java)
         val dateFmt = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
         provideContent {
@@ -37,7 +38,7 @@ class NotesWidget : GlanceAppWidget() {
                 ) {
                     // ── 标题栏 ──────────────────────
                     Row(
-                        modifier = GlanceModifier.fillMaxWidth().padding(bottom = 2.dp),
+                        modifier = GlanceModifier.fillMaxWidth().padding(bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
@@ -45,6 +46,12 @@ class NotesWidget : GlanceAppWidget() {
                             style = TextStyle(color = ColorProvider(Color(0xFFA5D6A7)), fontSize = 16.sp),
                             modifier = GlanceModifier.defaultWeight(),
                         )
+                        Text(
+                            text = "🔄",
+                            style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 16.sp),
+                            modifier = GlanceModifier.clickable(actionStartService(refreshIntent)),
+                        )
+                        Spacer(modifier = GlanceModifier.width(12.dp))
                         Image(
                             provider = BitmapFactory.decodeResource(
                                 context.resources, android.R.drawable.ic_input_add
@@ -53,20 +60,6 @@ class NotesWidget : GlanceAppWidget() {
                             modifier = GlanceModifier.size(28.dp)
                                 .clickable(actionStartActivity(newNoteIntent)),
                         )
-                    }
-
-                    // ── 刷新按钮（居中）──────────────
-                    Row(
-                        modifier = GlanceModifier.fillMaxWidth().padding(bottom = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Spacer(modifier = GlanceModifier.defaultWeight())
-                        Text(
-                            text = "🔄 刷新",
-                            style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 12.sp),
-                            modifier = GlanceModifier.clickable(actionStartActivity(refreshIntent)),
-                        )
-                        Spacer(modifier = GlanceModifier.defaultWeight())
                     }
 
                     // ── 计数 ────────────────────────
