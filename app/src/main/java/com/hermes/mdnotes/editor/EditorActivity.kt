@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hermes.mdnotes.ui.theme.MdNotesTheme
-import com.mukesh.MarkDown
 
 class EditorActivity : ComponentActivity() {
 
@@ -218,15 +217,4 @@ fun EditorScreen(
             }
         }
     }
-}
-
-/**
- * Markdown 预览 — 使用 MarkdownView-Android Compose 库
- */
-@Composable
-fun MarkdownPreview(content: String, modifier: Modifier = Modifier) {
-    MarkDown(
-        text = content,
-        modifier = modifier.fillMaxSize()
-    )
 }
