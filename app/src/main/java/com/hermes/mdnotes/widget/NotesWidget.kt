@@ -9,7 +9,6 @@ import androidx.compose.ui.unit.sp
 import androidx.glance.*
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
-import androidx.glance.appwidget.action.actionSendBroadcast
 import androidx.glance.appwidget.action.actionStartActivity
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
@@ -26,11 +25,6 @@ class NotesWidget : GlanceAppWidget() {
         val allNotes = WidgetDataProvider.loadNotes(context)
         val newNoteIntent = Intent(context, EditorActivity::class.java)
         val dateFmt = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
-
-        // 刷新广播 Intent
-        val refreshIntent = Intent(context, NotesWidgetReceiver::class.java).apply {
-            action = NotesWidgetReceiver.ACTION_REFRESH
-        }
 
         provideContent {
             GlanceTheme {
@@ -49,15 +43,6 @@ class NotesWidget : GlanceAppWidget() {
                             text = "📝 MD 笔记",
                             style = TextStyle(color = ColorProvider(Color(0xFFA5D6A7)), fontSize = 16.sp),
                             modifier = GlanceModifier.defaultWeight(),
-                        )
-                        // 刷新按钮
-                        Image(
-                            provider = BitmapFactory.decodeResource(
-                                context.resources, android.R.drawable.ic_popup_sync
-                            ).let { ImageProvider(it) },
-                            contentDescription = "刷新",
-                            modifier = GlanceModifier.size(28.dp)
-                                .clickable(actionSendBroadcast(refreshIntent)),
                         )
                         // 新建按钮
                         Image(
