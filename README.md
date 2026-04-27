@@ -1,6 +1,5 @@
 # Markdown 笔记 — Android Widget 应用
 
-**session_id**: `2026-04-26-markdown-notes-widget`
 
 一个 Android Markdown 笔记应用，核心功能是**桌面 Widget**：
 - Widget 直接读取本地 .md 文件，以 Todo-list 风格展示
