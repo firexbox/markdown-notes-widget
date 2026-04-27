@@ -1,5 +1,7 @@
 package com.hermes.mdnotes.widget
 
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import androidx.compose.runtime.Composable
@@ -187,5 +189,11 @@ class RefreshAction : ActionCallback {
         parameters: ActionParameters
     ) {
         NotesWidget().update(context, glanceId)
+        // 对标 AppWidgetManager.updateAppWidget() 立即刷新
+        try {
+            val awm = AppWidgetManager.getInstance(context)
+            val cn = ComponentName(context, NotesWidgetReceiver::class.java)
+            awm.getAppWidgetIds(cn).forEach { awm.notifyAppWidgetViewDataChanged(it, android.R.id.background) }
+        } catch (_: Exception) {}
     }
 }
