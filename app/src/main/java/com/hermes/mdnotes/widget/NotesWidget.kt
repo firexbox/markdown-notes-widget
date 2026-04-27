@@ -28,18 +28,6 @@ class NotesWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme {
-                // 获取 Widget 实际尺寸
-                val widgetSize = LocalSize.current
-
-                // 估算可容纳条目数
-                // 头部(标题+计数) ≈ 65dp，每条笔记 ≈ 56dp（标题行 24dp + 预览 22dp + 间距 10dp）
-                val headerDp = 65f
-                val itemDp = 56f
-                val availableDp = widgetSize.height.value - headerDp
-                val maxItems = maxOf(1, (availableDp / itemDp).toInt())
-                val displayNotes = allNotes.take(maxItems)
-                val hiddenCount = allNotes.size - displayNotes.size
-
                 Column(
                     modifier = GlanceModifier
                         .fillMaxWidth()
@@ -48,59 +36,42 @@ class NotesWidget : GlanceAppWidget() {
                 ) {
                     // ── 标题栏 ──────────────────────
                     Row(
-                        modifier = GlanceModifier
-                            .fillMaxWidth()
-                            .padding(bottom = 4.dp),
+                        modifier = GlanceModifier.fillMaxWidth().padding(bottom = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             text = "📝 MD 笔记",
-                            style = TextStyle(
-                                color = ColorProvider(Color(0xFFA5D6A7)),
-                                fontSize = 16.sp,
-                            ),
+                            style = TextStyle(color = ColorProvider(Color(0xFFA5D6A7)), fontSize = 16.sp),
                             modifier = GlanceModifier.defaultWeight(),
                         )
                         Image(
                             provider = BitmapFactory.decodeResource(
-                                context.resources,
-                                android.R.drawable.ic_input_add
+                                context.resources, android.R.drawable.ic_input_add
                             ).let { ImageProvider(it) },
                             contentDescription = "新建",
-                            modifier = GlanceModifier
-                                .size(28.dp)
+                            modifier = GlanceModifier.size(28.dp)
                                 .clickable(actionStartActivity(newNoteIntent)),
                         )
                     }
 
-                    // ── 计数 + 排序说明 ──────────────
-                    val countText = when {
-                        allNotes.isEmpty() -> "暂无笔记"
-                        hiddenCount > 0 -> "${displayNotes.size}/${allNotes.size} 条 · 按时间↓"
-                        else -> "${allNotes.size} 条 · 按时间↓"
-                    }
+                    // ── 计数 ────────────────────────
                     Text(
-                        text = countText,
-                        style = TextStyle(
-                            color = ColorProvider(Color(0xFF888888)),
-                            fontSize = 11.sp,
-                        ),
+                        text = if (allNotes.isEmpty()) "暂无笔记"
+                               else "${allNotes.size} 条 · 按时间↓",
+                        style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 11.sp),
                         modifier = GlanceModifier.padding(bottom = 4.dp),
                     )
 
-                    // ── 笔记列表 ────────────────────
-                    if (displayNotes.isEmpty()) {
+                    // ── 笔记列表（LazyColumn 自然裁剪，resize 自动适配）──
+                    if (allNotes.isEmpty()) {
                         Text(
                             text = "点击右上角 + 创建第一条笔记",
-                            style = TextStyle(
-                                color = ColorProvider(Color(0xFF666666)),
-                                fontSize = 13.sp,
-                            ),
+                            style = TextStyle(color = ColorProvider(Color(0xFF666666)), fontSize = 13.sp),
                             modifier = GlanceModifier.padding(vertical = 16.dp),
                         )
                     } else {
                         LazyColumn(modifier = GlanceModifier.fillMaxWidth()) {
-                            items(displayNotes) { note ->
+                            items(allNotes) { note ->
                                 val editIntent = Intent(context, EditorActivity::class.java).apply {
                                     putExtra(EditorActivity.EXTRA_FILE_PATH, note.filePath)
                                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -119,28 +90,19 @@ class NotesWidget : GlanceAppWidget() {
                                     ) {
                                         Text(
                                             text = note.title,
-                                            style = TextStyle(
-                                                color = ColorProvider(Color(0xFFE6E1E5)),
-                                                fontSize = 14.sp,
-                                            ),
+                                            style = TextStyle(color = ColorProvider(Color(0xFFE6E1E5)), fontSize = 14.sp),
                                             maxLines = 1,
                                             modifier = GlanceModifier.defaultWeight(),
                                         )
                                         Text(
                                             text = dateFmt.format(Date(note.lastModified)),
-                                            style = TextStyle(
-                                                color = ColorProvider(Color(0xFF666666)),
-                                                fontSize = 10.sp,
-                                            ),
+                                            style = TextStyle(color = ColorProvider(Color(0xFF666666)), fontSize = 10.sp),
                                         )
                                     }
                                     if (note.preview.isNotBlank()) {
                                         Text(
                                             text = note.preview,
-                                            style = TextStyle(
-                                                color = ColorProvider(Color(0xFF999999)),
-                                                fontSize = 11.sp,
-                                            ),
+                                            style = TextStyle(color = ColorProvider(Color(0xFF999999)), fontSize = 11.sp),
                                             maxLines = 2,
                                             modifier = GlanceModifier.padding(top = 2.dp),
                                         )
