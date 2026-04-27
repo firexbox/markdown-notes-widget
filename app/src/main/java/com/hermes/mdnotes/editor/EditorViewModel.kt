@@ -73,6 +73,14 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
 
     fun onTitleChanged(newTitle: String) {
         _title.value = newTitle
+        // 已有笔记立即重命名文件
+        val note = _note.value
+        if (note != null && newTitle.isNotBlank()) {
+            val renamed = repository.renameNote(note.filePath, newTitle)
+            if (renamed != null) {
+                _note.value = renamed
+            }
+        }
         scheduleAutoSave()
     }
 
