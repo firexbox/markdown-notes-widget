@@ -120,6 +120,11 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
+    /** 仅在有修改时才保存，用于返回时 */
+    fun saveIfChanged() {
+        if (hasChanges) saveNow()
+    }
+
     private fun scheduleAutoSave() {
         hasChanges = true
         autoSaveJob?.cancel()

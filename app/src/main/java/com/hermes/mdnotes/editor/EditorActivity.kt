@@ -71,9 +71,9 @@ fun EditorScreen(
         else filePath?.let { viewModel.loadNote(it) }
     }
 
-    // 系统返回键也触发保存
+    // 系统返回键 — 仅修改时保存
     BackHandler {
-        viewModel.saveNow()
+        viewModel.saveIfChanged()
         onBack()
     }
 
@@ -89,7 +89,7 @@ fun EditorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        viewModel.saveNow()
+                        viewModel.saveIfChanged()
                         onBack()
                     }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "返回")
