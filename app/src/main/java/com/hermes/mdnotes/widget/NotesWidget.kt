@@ -10,7 +10,7 @@ import androidx.glance.*
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.*
 import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.action.actionStartService
+import androidx.glance.appwidget.action.actionSendBroadcast
 import androidx.glance.appwidget.lazy.LazyColumn
 import androidx.glance.appwidget.lazy.items
 import androidx.glance.layout.*
@@ -25,7 +25,9 @@ class NotesWidget : GlanceAppWidget() {
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val allNotes = WidgetDataProvider.loadNotes(context).take(10)
         val newNoteIntent = Intent(context, EditorActivity::class.java)
-        val refreshIntent = Intent(context, WidgetRefreshService::class.java)
+        val refreshIntent = Intent(context, NotesWidgetReceiver::class.java).apply {
+            action = NotesWidgetReceiver.ACTION_REFRESH
+        }
         val dateFmt = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
         provideContent {
@@ -49,7 +51,7 @@ class NotesWidget : GlanceAppWidget() {
                         Text(
                             text = "🔄",
                             style = TextStyle(color = ColorProvider(Color(0xFF888888)), fontSize = 16.sp),
-                            modifier = GlanceModifier.clickable(actionStartService(refreshIntent)),
+                            modifier = GlanceModifier.clickable(actionSendBroadcast(refreshIntent)),
                         )
                         Spacer(modifier = GlanceModifier.width(12.dp))
                         Image(
