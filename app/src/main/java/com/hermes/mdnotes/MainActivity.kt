@@ -16,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -39,6 +40,9 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var repository: NotesRepository
     private val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
+
+    // 记录最后编辑的文件路径，onResume 时触发滚动
+    private var lastEditedPath: String? = null
 
     // ── SAF 目录选择器 ──────────────────────────
 
@@ -155,6 +159,15 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
+                // 编辑返回后滚动到已编辑的笔记
+                var scrollToPath by remember { mutableStateOf<String?>(null) }
+                LaunchedEffect(Unit) {
+                    lastEditedPath?.let { path ->
+                        scrollToPath = path
+                        lastEditedPath = null
+                    }
+                }
+
                 NotesListScreen(
                     repository = repository,
                     onNoteClick = { note -> openEditor(note.filePath) },
@@ -173,6 +186,8 @@ class MainActivity : ComponentActivity() {
                         }
                     },
                     dateFormat = dateFormat,
+                    scrollToPath = scrollToPath,
+                    onScrolled = { scrollToPath = null },
                 )
             }
         }
@@ -198,6 +213,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openEditor(filePath: String) {
+        lastEditedPath = filePath
         startActivity(Intent(this, EditorActivity::class.java).apply {
             putExtra(EditorActivity.EXTRA_FILE_PATH, filePath)
         })
@@ -252,6 +268,8 @@ fun NotesListScreen(
     onNewNote: () -> Unit,
     onSelectDirectory: () -> Unit,
     dateFormat: SimpleDateFormat,
+    scrollToPath: String? = null,
+    onScrolled: () -> Unit = {},
 ) {
     val notes by repository.notes.collectAsState(initial = emptyList())
     val notesDir by repository.notesDir.collectAsState(initial = null)
@@ -262,6 +280,20 @@ fun NotesListScreen(
 
     val displayNotes = remember(notes, searchQuery, sortByModified) {
         repository.filteredNotes(searchQuery, sortByModified)
+    }
+
+    val listState = rememberLazyListState()
+
+    // 编辑返回后滚动到已编辑的笔记
+    LaunchedEffect(scrollToPath) {
+        val path = scrollToPath ?: return@LaunchedEffect
+        val idx = displayNotes.indexOfFirst { it.filePath == path }
+        if (idx >= 0) {
+            listState.animateScrollToItem(idx)
+        } else {
+            listState.animateScrollToItem(0)
+        }
+        onScrolled()
     }
 
     Scaffold(
@@ -346,6 +378,7 @@ fun NotesListScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 ) {
