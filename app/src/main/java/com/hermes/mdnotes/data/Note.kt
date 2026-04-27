@@ -40,7 +40,7 @@ data class Note(
                 ?.trimStart()
                 ?.removePrefix("# ")
                 ?.trim()
-                ?: file.name.removeSuffix(".md").substringAfter('_')
+                ?: file.name.removeSuffix(".md").substringAfter('_').substringAfter('_')
 
             // 提取预览：跳过标题行，取前 200 字符
             val preview = rawText.lines()

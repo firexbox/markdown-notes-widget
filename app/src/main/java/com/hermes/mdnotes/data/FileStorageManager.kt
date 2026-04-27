@@ -147,7 +147,7 @@ class FileStorageManager(private var notesDir: File) {
         val oldFile = File(oldPath)
         if (!oldFile.exists()) return null
         val safeTitle = newTitle.replace(Regex("[/\\\\:*?\"<>|]"), "_").take(50)
-        val ts = oldFile.name.substringBefore('_')
+        val ts = oldFile.name.replace(Regex("^(\\d{8}_\\d{6})_.*"), "$1")
         val newName = "${ts}_$safeTitle.md"
         val newFile = File(oldFile.parentFile, newName)
         return if (oldFile.renameTo(newFile)) {
