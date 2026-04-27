@@ -41,8 +41,9 @@ class MainActivity : ComponentActivity() {
     private lateinit var repository: NotesRepository
     private val dateFormat = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
 
-    // 编辑/新建后滚到底部 — 类级 State 桥接 onResume → Composable
-    private var pendingScrollToBottom = false
+    // 编辑/新建后滚到顶部 — 跟踪实际修改
+    private var editedFilePath: String? = null
+    private var editedFileLastModified: Long = 0
     private val scrollTrigger = mutableIntStateOf(0)
 
     // ── SAF 目录选择器 ──────────────────────────
@@ -187,10 +188,17 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
 
-        // 编辑/新建返回 → 触发滚到底部
-        if (pendingScrollToBottom) {
-            pendingScrollToBottom = false
-            scrollTrigger.intValue++
+        // 编辑/新建返回 → 仅实际修改时滚到顶部
+        if (editedFilePath != null) {
+            val wasModified = when (editedFilePath) {
+                "_new_" -> true // 新建永远滚动
+                else -> {
+                    val f = File(editedFilePath!!)
+                    f.exists() && f.lastModified() != editedFileLastModified
+                }
+            }
+            editedFilePath = null
+            if (wasModified) scrollTrigger.intValue++
         }
 
         // 从设置页返回时：权限刚开启且首次启动未完成 → 自动弹目录选择
@@ -211,14 +219,15 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun openEditor(filePath: String) {
-        pendingScrollToBottom = true
+        editedFilePath = filePath
+        editedFileLastModified = File(filePath).lastModified()
         startActivity(Intent(this, EditorActivity::class.java).apply {
             putExtra(EditorActivity.EXTRA_FILE_PATH, filePath)
         })
     }
 
     private fun openNewNote() {
-        pendingScrollToBottom = true
+        editedFilePath = "_new_"
         startActivity(Intent(this, EditorActivity::class.java))
     }
 }
@@ -282,10 +291,10 @@ fun NotesListScreen(
 
     val listState = rememberLazyListState()
 
-    // 编辑/新建返回后滚到底部
+    // 编辑/新建返回后滚到顶部
     LaunchedEffect(scrollBottomTrigger) {
         if (scrollBottomTrigger > 0 && displayNotes.isNotEmpty()) {
-            listState.animateScrollToItem(displayNotes.size - 1)
+            listState.animateScrollToItem(0)
         }
     }
 
