@@ -79,7 +79,7 @@ fun EditorScreen(
                     if (showPreview) {
                         Text(title.ifBlank { "预览" })
                     } else {
-                        Text(if (isNew) "新建笔记" else "编辑笔记")
+                        Text(title.ifBlank { if (isNew) "新建笔记" else "编辑笔记" })
                     }
                 },
                 navigationIcon = {
@@ -199,7 +199,7 @@ fun EditorScreen(
                         ) {
                             if (content.isEmpty()) {
                                 Text(
-                                    "开始写 Markdown…\n\n# 标题\n**粗体** *斜体* `代码`\n- 列表项",
+                                    "开始写 Markdown…\n\n**粗体** *斜体* `代码`\n- 列表项",
                                     style = TextStyle(
                                         fontSize = 16.sp,
                                         lineHeight = 24.sp,

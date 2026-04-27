@@ -97,20 +97,15 @@ class FileStorageManager(private var notesDir: File) {
 
     // ── 写入 ──────────────────────────────────────
 
-    /** 保存笔记，内部标题变化时自动重命名文件，返回新路径 */
+    /** 保存笔记，内部有#标题时自动重命名文件 */
     fun saveNote(filePath: String, title: String, content: String): String? {
         return try {
             val file = File(filePath)
             file.parentFile?.mkdirs()
-            val fullContent = if (content.trimStart().startsWith("# ")) {
-                content
-            } else {
-                "# $title\n\n$content"
-            }
-            file.writeText(fullContent)
+            file.writeText(content)
 
-            // markdown 内部标题
-            val internalTitle = fullContent.lines()
+            // 从内容提取 # 标题用做文件名
+            val internalTitle = content.lines()
                 .firstOrNull { it.trimStart().startsWith("# ") }
                 ?.trimStart()?.removePrefix("# ")?.trim()
                 ?: title
@@ -132,7 +127,7 @@ class FileStorageManager(private var notesDir: File) {
         }
     }
 
-    /** 新建笔记 */
+    /** 新建笔记（Obsidian风格：文件名即标题，不含#） */
     fun createNote(title: String, initialContent: String = ""): Note? {
         return try {
             ensureDirectory()
@@ -140,8 +135,7 @@ class FileStorageManager(private var notesDir: File) {
             val safeTitle = title.replace(Regex("[/\\\\:*?\"<>|]"), "_").take(50)
             val fileName = "${timestamp}_$safeTitle.md"
             val file = File(notesDir, fileName)
-            val content = "# $title\n\n$initialContent"
-            file.writeText(content)
+            file.writeText(initialContent)
             Note(
                 fileName = fileName,
                 filePath = file.absolutePath,

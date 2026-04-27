@@ -34,13 +34,13 @@ data class Note(
                 ""
             }
 
-            // 提取标题：第一行 # heading
+            // 提取标题：优先 # heading，回退到文件名（去时间戳前缀）
             val title = rawText.lines()
                 .firstOrNull { it.trimStart().startsWith("# ") }
                 ?.trimStart()
                 ?.removePrefix("# ")
                 ?.trim()
-                ?: file.nameWithoutExtension
+                ?: file.name.removeSuffix(".md").substringAfter('_')
 
             // 提取预览：跳过标题行，取前 200 字符
             val preview = rawText.lines()
