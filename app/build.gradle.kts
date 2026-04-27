@@ -85,9 +85,6 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-    // Markdown Preview — WebView + marked.js 暗色主题
-    implementation("com.github.mukeshsolanki:MarkdownView-Android:2.0.0")
-
     // Debug
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
