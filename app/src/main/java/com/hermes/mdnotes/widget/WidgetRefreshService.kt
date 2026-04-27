@@ -4,23 +4,17 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 
 class WidgetRefreshService : Service() {
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        scope.launch {
+        // 主线程协程执行 Glance update（必须主线程）
+        CoroutineScope(Dispatchers.Main).launch {
             try {
                 val manager = GlanceAppWidgetManager(this@WidgetRefreshService)
                 val glanceIds = manager.getGlanceIds(NotesWidget::class.java)
-                val widget = NotesWidget()
-                glanceIds.forEach { widget.update(this@WidgetRefreshService, it) }
+                glanceIds.forEach { NotesWidget().update(this@WidgetRefreshService, it) }
             } catch (_: Exception) {}
             stopSelf()
         }
@@ -28,9 +22,4 @@ class WidgetRefreshService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-
-    override fun onDestroy() {
-        super.onDestroy()
-        scope.cancel()
-    }
 }
