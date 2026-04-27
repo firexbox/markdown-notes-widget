@@ -45,15 +45,11 @@ private fun buildDarkHtml(markdown: String, dark: Boolean): String {
     val link = if (dark) "#A5D6A7" else "#1B6D27"
     val heading = if (dark) "#A5D6A7" else "#1B5E20"
 
-    val escaped = markdown
-        .replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace("\n", "\\n")
-        .replace("'", "\\'")
-        .replace("\"", "\\\"")
+    val b64 = android.util.Base64.encodeToString(
+        markdown.toByteArray(Charsets.UTF_8),
+        android.util.Base64.NO_WRAP
+    )
 
-    // Use marked.js for client-side markdown rendering with dark theme
     return """
 <!DOCTYPE html>
 <html>
@@ -84,17 +80,14 @@ img { max-width: 100%; }
 ul, ol { padding-left: 24px; margin: 8px 0; }
 li { margin: 4px 0; }
 hr { border: none; border-top: 1px solid $border; margin: 16px 0; }
-input[type="checkbox"] { margin-right: 8px; }
 </style>
 </head>
 <body>
 <div id="content"></div>
 <script>
-try {
-    document.getElementById('content').innerHTML = marked.parse("$escaped");
-} catch(e) {
-    document.getElementById('content').innerText = "$escaped";
-}
+var md = atob("$b64");
+var decoded = new TextDecoder().decode(new Uint8Array([...md].map(c=>c.charCodeAt(0))));
+document.getElementById('content').innerHTML = marked.parse(decoded);
 </script>
 </body>
 </html>
