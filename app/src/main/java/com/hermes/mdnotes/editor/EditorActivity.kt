@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.*
@@ -68,6 +69,12 @@ fun EditorScreen(
     LaunchedEffect(filePath) {
         if (isNew) viewModel.initNewNote()
         else filePath?.let { viewModel.loadNote(it) }
+    }
+
+    // 系统返回键也触发保存
+    BackHandler {
+        viewModel.saveNow()
+        onBack()
     }
 
     Scaffold(
