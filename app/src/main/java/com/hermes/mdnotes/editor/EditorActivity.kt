@@ -229,6 +229,7 @@ fun MarkdownPreview(content: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val markwon = remember {
         io.noties.markwon.Markwon.builder(context)
+                .usePlugin(io.noties.markwon.core.CorePlugin.create())
                 .usePlugin(io.noties.markwon.ext.strikethrough.StrikethroughPlugin.create())
                 .usePlugin(io.noties.markwon.ext.tables.TablePlugin.create(context))
                 .usePlugin(io.noties.markwon.ext.tasklist.TaskListPlugin.create(context))
