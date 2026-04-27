@@ -8,9 +8,6 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
 
-/**
- * 文件存储管理器 — 笔记文件的 CRUD 操作
- */
 class FileStorageManager(private var notesDir: File) {
 
     // ── 目录管理 ──────────────────────────────────
@@ -30,10 +27,6 @@ class FileStorageManager(private var notesDir: File) {
 
     // ── 目录迁移 ──────────────────────────────────
 
-    /**
-     * 将旧目录中的所有 .md 文件拷贝到当前目录
-     * @return 成功拷贝的数量
-     */
     fun migrateFilesFrom(sourceDir: File): Int {
         if (!sourceDir.exists() || !sourceDir.isDirectory) return 0
         ensureDirectory()
@@ -41,7 +34,6 @@ class FileStorageManager(private var notesDir: File) {
         sourceDir.listFiles { f -> f.isFile && f.extension.equals("md", ignoreCase = true) }
             ?.forEach { sourceFile ->
                 val destFile = File(notesDir, sourceFile.name)
-                // 不覆盖已存在的同名文件
                 if (!destFile.exists()) {
                     try {
                         sourceFile.copyTo(destFile)
@@ -56,7 +48,6 @@ class FileStorageManager(private var notesDir: File) {
 
     // ── 读取 ──────────────────────────────────────
 
-    /** 列出目录中所有 .md 文件，转为 Note 列表（Flow 方式） */
     fun listNotesFlow(): Flow<List<Note>> = flow {
         val notes = withContext(Dispatchers.IO) {
             listNotesSync()
@@ -64,7 +55,6 @@ class FileStorageManager(private var notesDir: File) {
         emit(notes)
     }
 
-    /** 同步列出笔记（供 Widget 调用） */
     fun listNotesSync(): List<Note> {
         val dir = ensureDirectory()
         return dir.listFiles { f -> f.isFile && f.extension.equals("md", ignoreCase = true) }
@@ -73,7 +63,6 @@ class FileStorageManager(private var notesDir: File) {
             ?: emptyList()
     }
 
-    /** 读取笔记完整内容 */
     fun readNote(filePath: String): String {
         return try {
             File(filePath).readText()
@@ -82,7 +71,6 @@ class FileStorageManager(private var notesDir: File) {
         }
     }
 
-    /** 读取笔记完整内容（同步，含元数据） */
     fun readNoteFull(filePath: String): Note? {
         return try {
             val file = File(filePath)
@@ -109,8 +97,8 @@ class FileStorageManager(private var notesDir: File) {
 
     // ── 写入 ──────────────────────────────────────
 
-    /** 保存笔记（覆盖写入） */
-    fun saveNote(filePath: String, title: String, content: String): Boolean {
+    /** 保存笔记，内部标题变化时自动重命名文件，返回新路径 */
+    fun saveNote(filePath: String, title: String, content: String): String? {
         return try {
             val file = File(filePath)
             file.parentFile?.mkdirs()
@@ -120,10 +108,27 @@ class FileStorageManager(private var notesDir: File) {
                 "# $title\n\n$content"
             }
             file.writeText(fullContent)
-            true
+
+            // markdown 内部标题
+            val internalTitle = fullContent.lines()
+                .firstOrNull { it.trimStart().startsWith("# ") }
+                ?.trimStart()?.removePrefix("# ")?.trim()
+                ?: title
+
+            // 新文件名：时间戳_内部标题
+            val safeTitle = internalTitle.replace(Regex("[/\\\\:*?\"<>|]"), "_").take(50)
+            val ts = file.name.substringBefore('_')
+            val newName = "${ts}_$safeTitle.md"
+
+            if (newName != file.name) {
+                val newFile = File(file.parentFile, newName)
+                if (file.renameTo(newFile)) newFile.absolutePath else filePath
+            } else {
+                filePath
+            }
         } catch (e: Exception) {
             android.util.Log.e("FileStorageManager", "saveNote failed: $filePath", e)
-            false
+            null
         }
     }
 
@@ -160,13 +165,13 @@ class FileStorageManager(private var notesDir: File) {
         }
     }
 
+    /** 手动重命名，保留时间戳前缀 */
     fun renameNote(oldPath: String, newTitle: String): Note? {
         val oldFile = File(oldPath)
         if (!oldFile.exists()) return null
         val safeTitle = newTitle.replace(Regex("[/\\\\:*?\"<>|]"), "_").take(50)
-        val newName = safeTitle.endsWith(".md", ignoreCase = true).let {
-            if (it) safeTitle else "$safeTitle.md"
-        }
+        val ts = oldFile.name.substringBefore('_')
+        val newName = "${ts}_$safeTitle.md"
         val newFile = File(oldFile.parentFile, newName)
         return if (oldFile.renameTo(newFile)) {
             readNoteFull(newFile.absolutePath)

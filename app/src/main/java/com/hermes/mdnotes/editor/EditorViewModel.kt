@@ -8,6 +8,7 @@ import com.hermes.mdnotes.data.Note
 import com.hermes.mdnotes.data.NotesRepository
 import com.hermes.mdnotes.widget.NotesWidgetReceiver
 import kotlinx.coroutines.Job
+import java.io.File
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -93,8 +94,11 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
 
         val existing = _note.value
         if (existing != null) {
-            // 更新已有笔记
-            repository.saveNote(existing.filePath, t, c)
+            // 更新已有笔记（标题变自动重命名）
+            val newPath = repository.saveNote(existing.filePath, t, c)
+            if (newPath != null && newPath != existing.filePath) {
+                _note.value = existing.copy(filePath = newPath, fileName = File(newPath).name)
+            }
         } else {
             // 新建笔记
             val newNote = repository.createNote(t, c)
