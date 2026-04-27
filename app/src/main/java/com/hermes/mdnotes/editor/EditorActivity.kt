@@ -21,10 +21,10 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hermes.mdnotes.ui.theme.MdNotesTheme
-import org.commonmark.parser.Parser
-import org.commonmark.renderer.html.HtmlRenderer
 
 class EditorActivity : ComponentActivity() {
 
@@ -222,83 +222,34 @@ fun EditorScreen(
 }
 
 /**
- * Markdown 预览组件 — 使用 CommonMark 渲染
+ * Markdown 预览 — Markwon 渲染引擎，兼容 Obsidian 常见格式
  */
 @Composable
 fun MarkdownPreview(content: String, modifier: Modifier = Modifier) {
-    val html = remember(content) {
-        try {
-            val parser = Parser.builder().build()
-            val document = parser.parse(content)
-            HtmlRenderer.builder().build().render(document)
-        } catch (e: Exception) {
-            "<p>Markdown 解析错误</p>"
-        }
+    val context = LocalContext.current
+    val markwon = remember {
+        io.noties.markwon.Markwon.builder(context)
+                .usePlugin(io.noties.markwon.ext.strikethrough.StrikethroughPlugin.create())
+                .usePlugin(io.noties.markwon.ext.tables.TablePlugin.create(context))
+                .usePlugin(io.noties.markwon.ext.tasklist.TaskListPlugin.create(context))
+                .build()
     }
 
-    // 简化处理：用 Text 显示原始内容（Android 端 HTML 渲染需 WebView）
-    // 这里做纯文本渲染，后续可升级为 WebView 或 Markwon 渲染
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-    ) {
-        // 逐行渲染 Markdown 的轻量级预览
-        content.lines().forEach { line ->
-            when {
-                line.trimStart().startsWith("# ") -> {
-                    Text(
-                        line.trimStart().removePrefix("# "),
-                        style = TextStyle(fontSize = 24.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
-                        modifier = Modifier.padding(vertical = 4.dp),
-                    )
+    AndroidView(
+        factory = { ctx ->
+            io.noties.markwon.Markwon.create(ctx).let { mw ->
+                val textView = android.widget.TextView(ctx).apply {
+                    movementMethod = android.text.method.LinkMovementMethod.getInstance()
+                    setTextIsSelectable(true)
+                    setPadding(0, 0, 0, 0)
                 }
-                line.trimStart().startsWith("## ") -> {
-                    Text(
-                        line.trimStart().removePrefix("## "),
-                        style = TextStyle(fontSize = 20.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold),
-                        modifier = Modifier.padding(vertical = 3.dp),
-                    )
-                }
-                line.trimStart().startsWith("### ") -> {
-                    Text(
-                        line.trimStart().removePrefix("### "),
-                        style = TextStyle(fontSize = 18.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Medium),
-                        modifier = Modifier.padding(vertical = 2.dp),
-                    )
-                }
-                line.trimStart().startsWith("- ") || line.trimStart().startsWith("* ") -> {
-                    Row(modifier = Modifier.padding(start = 8.dp, top = 2.dp, bottom = 2.dp)) {
-                        Text("• ", style = TextStyle(fontSize = 14.sp))
-                        Text(
-                            line.trimStart().removePrefix("- ").removePrefix("* "),
-                            style = TextStyle(fontSize = 14.sp),
-                        )
-                    }
-                }
-                line.trimStart().startsWith("> ") -> {
-                    Text(
-                        line.trimStart().removePrefix("> "),
-                        style = TextStyle(fontSize = 14.sp, color = MaterialTheme.colorScheme.outline),
-                        modifier = Modifier
-                            .padding(start = 8.dp, top = 2.dp, bottom = 2.dp)
-                            .fillMaxWidth()
-                    )
-                }
-                line.trimStart().startsWith("```") -> {
-                    Text(
-                        "```",
-                        style = TextStyle(fontSize = 12.sp, color = MaterialTheme.colorScheme.outline),
-                    )
-                }
-                line.isBlank() -> {
-                    Spacer(Modifier.height(8.dp))
-                }
-                else -> {
-                    Text(line, style = TextStyle(fontSize = 14.sp))
-                }
+                mw.setMarkdown(textView, content)
+                textView
             }
-        }
-    }
+        },
+        update = { textView ->
+            markwon.setMarkdown(textView, content)
+        },
+        modifier = modifier.fillMaxSize()
+    )
 }
