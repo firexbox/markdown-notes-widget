@@ -23,7 +23,7 @@ import java.util.*
 class NotesWidget : GlanceAppWidget() {
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
-        val allNotes = WidgetDataProvider.loadNotes(context)
+        val allNotes = WidgetDataProvider.loadNotes(context).take(10)
         val newNoteIntent = Intent(context, EditorActivity::class.java)
         val refreshIntent = Intent(context, WidgetRefreshService::class.java)
         val dateFmt = SimpleDateFormat("MM-dd HH:mm", Locale.getDefault())
