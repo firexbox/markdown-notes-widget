@@ -16,6 +16,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -178,33 +179,36 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    override fun onResume() {
-        super.onResume()
-        // 从设置页返回时：权限刚开启且首次启动未完成 → 自动弹目录选择
-        if (PreferencesManager.isFirstLaunch(this) && hasFullStorageAccess()) {
-            dirPickerLauncher.launch(null)
-            return
-        }
-        // 从设置页返回时更新权限状态
-        if (hasFullStorageAccess()) {
-            val savedDir = PreferencesManager.getNotesDirectory(this)
-            if (savedDir != null) {
-                repository.setNotesDirectory(savedDir)
-                repository.refreshNotes()
-            }
-        }
-        repository.refreshNotes()
-        NotesWidgetReceiver.triggerUpdate(this)
-    }
-
     private fun openEditor(filePath: String) {
+        lastEditedPath = filePath
         startActivity(Intent(this, EditorActivity::class.java).apply {
             putExtra(EditorActivity.EXTRA_FILE_PATH, filePath)
         })
     }
 
     private fun openNewNote() {
+        lastEditedPath = null
         startActivity(Intent(this, EditorActivity::class.java))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (PreferencesManager.isFirstLaunch(this) && hasFullStorageAccess()) {
+            dirPickerLauncher.launch(null)
+            return
+        }
+        if (hasFullStorageAccess()) {
+            val savedDir = PreferencesManager.getNotesDirectory(this)
+            if (savedDir != null) {
+                repository.setNotesDirectory(savedDir)
+            }
+        }
+        repository.refreshNotes()
+        NotesWidgetReceiver.triggerUpdate(this)
+    }
+
+    companion object {
+        var lastEditedPath: String? = null
     }
 }
 
@@ -259,6 +263,19 @@ fun NotesListScreen(
     var searchQuery by remember { mutableStateOf("") }
     var sortByModified by remember { mutableStateOf(true) }
     var showSortMenu by remember { mutableStateOf(false) }
+    val listState = rememberLazyListState()
+    var highlightedPath by remember { mutableStateOf(MainActivity.lastEditedPath) }
+
+    // 高亮并滚动到最后编辑的笔记
+    LaunchedEffect(highlightedPath) {
+        if (highlightedPath != null) {
+            val idx = notes.indexOfFirst { it.filePath == highlightedPath }
+            if (idx >= 0) {
+                listState.animateScrollToItem(idx)
+                MainActivity.lastEditedPath = null
+            }
+        }
+    }
 
     val displayNotes = remember(notes, searchQuery, sortByModified) {
         repository.filteredNotes(searchQuery, sortByModified)
@@ -346,13 +363,16 @@ fun NotesListScreen(
                 }
             } else {
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
                 ) {
                     items(displayNotes, key = { it.filePath }) { note ->
-                        NoteListItem(note, dateFormat, { onNoteClick(note) },
-                            { repository.deleteNote(note.filePath) },
-                            { repository.renameNote(note.filePath, it) })
+                        NoteListItem(note, dateFormat,
+                            isHighlighted = note.filePath == highlightedPath,
+                            onClick = { onNoteClick(note) },
+                            onDelete = { repository.deleteNote(note.filePath) },
+                            onRename = { repository.renameNote(note.filePath, it) })
                     }
                     item { Spacer(Modifier.height(80.dp)) }
                 }
@@ -365,6 +385,7 @@ fun NotesListScreen(
 fun NoteListItem(
     note: Note,
     dateFormat: SimpleDateFormat,
+    isHighlighted: Boolean = false,
     onClick: () -> Unit,
     onDelete: () -> Unit,
     onRename: (String) -> Unit,
@@ -376,7 +397,10 @@ fun NoteListItem(
 
     Card(
         modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isHighlighted) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
     ) {
         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.Top) {
             Text("📄", style = MaterialTheme.typography.titleLarge)
