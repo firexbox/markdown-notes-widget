@@ -237,18 +237,22 @@ fun MarkdownPreview(content: String, modifier: Modifier = Modifier) {
 
     AndroidView(
         factory = { ctx ->
-            io.noties.markwon.Markwon.create(ctx).let { mw ->
-                val textView = android.widget.TextView(ctx).apply {
-                    movementMethod = android.text.method.LinkMovementMethod.getInstance()
-                    setTextIsSelectable(true)
-                    setPadding(0, 0, 0, 0)
-                }
-                mw.setMarkdown(textView, content)
-                textView
+            val scrollView = android.widget.ScrollView(ctx).apply {
+                setFillViewport(true)
             }
-        },
-        update = { textView ->
+            val textView = android.widget.TextView(ctx).apply {
+                movementMethod = android.text.method.LinkMovementMethod.getInstance()
+                setTextIsSelectable(true)
+                setPadding(32, 16, 32, 16)
+                textSize = 16f
+            }
+            scrollView.addView(textView)
             markwon.setMarkdown(textView, content)
+            scrollView
+        },
+        update = { scrollView ->
+            val textView = scrollView.getChildAt(0) as? android.widget.TextView
+            textView?.let { markwon.setMarkdown(it, content) }
         },
         modifier = modifier.fillMaxSize()
     )
