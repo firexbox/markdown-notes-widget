@@ -2,16 +2,20 @@ package com.hermes.mdnotes.widget
 
 import android.app.Activity
 import android.os.Bundle
-import com.hermes.mdnotes.widget.NotesWidgetReceiver
+import androidx.glance.appwidget.GlanceAppWidgetManager
+import kotlinx.coroutines.runBlocking
 
-/**
- * 透明 Activity，仅用于 Widget 刷新按钮回调
- * 启动后立即触发 Widget 更新并 finish，用户无感知
- */
 class WidgetRefreshActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        NotesWidgetReceiver.triggerUpdate(this)
+        // 同步执行更新，确保在 finish 前完成
+        runBlocking {
+            try {
+                val manager = GlanceAppWidgetManager(this@WidgetRefreshActivity)
+                val glanceIds = manager.getGlanceIds(NotesWidget::class.java)
+                glanceIds.forEach { NotesWidget().update(this@WidgetRefreshActivity, it) }
+            } catch (_: Exception) {}
+        }
         finish()
     }
 }
