@@ -55,7 +55,7 @@ class NotesWidget : GlanceAppWidget() {
             titleBar = {
                 Row(
                     modifier = GlanceModifier.fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
