@@ -12,9 +12,6 @@ class NotesWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: NotesWidget = NotesWidget()
 
     companion object {
-        /**
-         * 从主 App 触发 Widget 刷新
-         */
         fun triggerUpdate(context: Context) {
             CoroutineScope(Dispatchers.Main).launch {
                 try {
