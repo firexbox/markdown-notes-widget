@@ -19,6 +19,15 @@ android {
         }
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("../mdnotes.keystore")
+            storePassword = "android"
+            keyAlias = "mdnotes"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -26,6 +35,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
