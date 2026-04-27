@@ -97,33 +97,16 @@ class FileStorageManager(private var notesDir: File) {
 
     // ── 写入 ──────────────────────────────────────
 
-    /** 保存笔记，内部有#标题时自动重命名文件 */
-    fun saveNote(filePath: String, title: String, content: String): String? {
+    /** 保存笔记（标题与内容#标题互不影响） */
+    fun saveNote(filePath: String, content: String): Boolean {
         return try {
             val file = File(filePath)
             file.parentFile?.mkdirs()
             file.writeText(content)
-
-            // 从内容提取 # 标题用做文件名
-            val internalTitle = content.lines()
-                .firstOrNull { it.trimStart().startsWith("# ") }
-                ?.trimStart()?.removePrefix("# ")?.trim()
-                ?: title
-
-            // 新文件名：时间戳_内部标题
-            val safeTitle = internalTitle.replace(Regex("[/\\\\:*?\"<>|]"), "_").take(50)
-            val ts = file.name.substringBefore('_')
-            val newName = "${ts}_$safeTitle.md"
-
-            if (newName != file.name) {
-                val newFile = File(file.parentFile, newName)
-                if (file.renameTo(newFile)) newFile.absolutePath else filePath
-            } else {
-                filePath
-            }
+            true
         } catch (e: Exception) {
             android.util.Log.e("FileStorageManager", "saveNote failed: $filePath", e)
-            null
+            false
         }
     }
 

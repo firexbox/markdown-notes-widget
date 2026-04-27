@@ -50,10 +50,10 @@ class NotesRepository private constructor(private val fileManager: FileStorageMa
         return note
     }
 
-    fun saveNote(filePath: String, title: String, content: String): String? {
-        val newPath = fileManager.saveNote(filePath, title, content)
-        if (newPath != null) refreshNotes()
-        return newPath
+    fun saveNote(filePath: String, content: String) {
+        if (fileManager.saveNote(filePath, content)) {
+            refreshNotes()
+        }
     }
 
     fun deleteNote(filePath: String): Boolean {
