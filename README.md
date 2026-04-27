@@ -15,7 +15,7 @@
 | 语言 | Kotlin |
 | UI | Jetpack Compose (Material3) |
 | Widget | Jetpack Glance |
-| Markdown | CommonMark + 自绘预览 |
+| Markdown | Markwon + CommonMark + WebView 预览 |
 | 最低 SDK | Android 8.0 (API 26) |
 
 ## 构建
@@ -71,4 +71,8 @@ app/src/main/java/com/hermes/mdnotes/
 
 ## License
 
-MIT
+[GNU General Public License v3.0](LICENSE)
+
+本项目承袭 [OpenNote-Compose](https://github.com/YangDai2003/OpenNote-Compose) 的 GPL-3.0 协议，Widget 刷新机制和 Markdown 渲染方案参考自此项目。
+
+完整第三方依赖及许可详见 [DEPENDENCIES.md](DEPENDENCIES.md)。
