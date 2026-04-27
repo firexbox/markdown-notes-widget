@@ -4,21 +4,33 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.glance.appwidget.GlanceAppWidgetManager
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 class WidgetRefreshService : Service() {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val ctx = this
-        runBlocking {
+        scope.launch {
             try {
-                val manager = GlanceAppWidgetManager(ctx)
+                val manager = GlanceAppWidgetManager(this@WidgetRefreshService)
                 val glanceIds = manager.getGlanceIds(NotesWidget::class.java)
-                glanceIds.forEach { NotesWidget().update(ctx, it) }
+                val widget = NotesWidget()
+                glanceIds.forEach { widget.update(this@WidgetRefreshService, it) }
             } catch (_: Exception) {}
+            stopSelf()
         }
-        stopSelf()
         return START_NOT_STICKY
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        super.onDestroy()
+        scope.cancel()
+    }
 }

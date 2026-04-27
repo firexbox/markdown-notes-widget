@@ -23,8 +23,13 @@ data class Note(
     companion object {
         /** 从 File 读取元数据（不加载全文） */
         fun fromFile(file: File): Note {
+            // 只读头部 2KB，不读全文（大幅提速）
             val rawText = try {
-                file.readText()
+                file.inputStream().bufferedReader().use { reader ->
+                    val buf = CharArray(2048)
+                    val n = reader.read(buf)
+                    if (n > 0) String(buf, 0, n) else ""
+                }
             } catch (e: Exception) {
                 ""
             }
