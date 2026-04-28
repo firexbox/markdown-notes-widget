@@ -282,11 +282,9 @@ fun NotesListScreen(
     val notesDir by repository.notesDir.collectAsState(initial = null)
 
     var searchQuery by remember { mutableStateOf("") }
-    var sortByModified by remember { mutableStateOf(true) }
-    var showSortMenu by remember { mutableStateOf(false) }
 
-    val displayNotes = remember(notes, searchQuery, sortByModified) {
-        repository.filteredNotes(searchQuery, sortByModified)
+    val displayNotes = remember(notes, searchQuery) {
+        repository.filteredNotes(searchQuery, sortByModified = true)
     }
 
     val listState = rememberLazyListState()
@@ -303,26 +301,6 @@ fun NotesListScreen(
             TopAppBar(
                 title = { Text("📝 Markdown 笔记") },
                 actions = {
-                    Box {
-                        IconButton(onClick = { showSortMenu = true }) {
-                            Icon(Icons.Default.Sort, contentDescription = "排序")
-                        }
-                        DropdownMenu(
-                            expanded = showSortMenu,
-                            onDismissRequest = { showSortMenu = false },
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("按修改时间") },
-                                onClick = { sortByModified = true; showSortMenu = false },
-                                leadingIcon = { if (sortByModified) Icon(Icons.Default.Check, null) },
-                            )
-                            DropdownMenuItem(
-                                text = { Text("按标题") },
-                                onClick = { sortByModified = false; showSortMenu = false },
-                                leadingIcon = { if (!sortByModified) Icon(Icons.Default.Check, null) },
-                            )
-                        }
-                    }
                     IconButton(onClick = onSelectDirectory) {
                         Icon(Icons.Default.FolderOpen, contentDescription = "选择目录")
                     }
