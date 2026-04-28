@@ -13,10 +13,11 @@ import org.commonmark.ext.gfm.strikethrough.StrikethroughExtension
 import org.commonmark.ext.gfm.tables.TablesExtension
 import org.commonmark.parser.Parser
 import org.commonmark.renderer.html.HtmlRenderer
+import java.io.File
 
 @SuppressLint("SetJavaScriptEnabled")
 @Composable
-fun MarkdownPreview(content: String, modifier: Modifier = Modifier) {
+fun MarkdownPreview(content: String, notesDir: String? = null, modifier: Modifier = Modifier) {
     val colorScheme = MaterialTheme.colorScheme
     val bg = remember { colorScheme.surface.toArgb() }
     val text = remember { colorScheme.onSurface.toArgb() }
@@ -34,11 +35,16 @@ fun MarkdownPreview(content: String, modifier: Modifier = Modifier) {
     }
     val renderer = remember { HtmlRenderer.builder().build() }
 
-    val body = remember(content, parser, renderer) {
+    // 预处理 ![[filename]] → HTML 标签
+    val processed = remember(content, notesDir) {
+        processEmbeds(content, notesDir)
+    }
+
+    val body = remember(processed, parser, renderer) {
         try {
-            val doc = parser.parse(content)
+            val doc = parser.parse(processed)
             renderer.render(doc)
-        } catch (e: Exception) { content }
+        } catch (e: Exception) { processed }
     }
 
     val isDark = colorScheme.background.toArgb().let { c ->
@@ -50,19 +56,55 @@ fun MarkdownPreview(content: String, modifier: Modifier = Modifier) {
         buildTemplate(body, cs, bg, text, code, link, border)
     }
 
+    // 附件目录作为 base URL，使 file:// 路径可用
+    val baseUrl = remember(notesDir) {
+        notesDir?.let { "file://${it}/附件/" } ?: "about:blank"
+    }
+
     AndroidView(
         factory = { ctx ->
             WebView(ctx).apply {
                 setBackgroundColor(bg)
                 isVerticalScrollBarEnabled = false
                 isHorizontalScrollBarEnabled = false
+                settings.allowFileAccess = true
             }
         },
         update = { wv ->
-            wv.loadDataWithBaseURL(null, html, "text/html", "UTF-8", null)
+            wv.loadDataWithBaseURL(baseUrl, html, "text/html", "UTF-8", null)
         },
         modifier = modifier.fillMaxSize()
     )
+}
+
+/** 将 ![[filename]] 替换为对应的 HTML 标签 */
+private fun processEmbeds(content: String, notesDir: String?): String {
+    val attachDir = notesDir?.let { File(it, "附件") }
+    val regex = Regex("""!\[\[([^\]]+)\]\]""")
+    return regex.replace(content) { match ->
+        val filename = match.groupValues[1].trim()
+        val file = attachDir?.let { File(it, filename) }
+        val filePath = file?.absolutePath
+
+        if (filePath != null && file.exists()) {
+            val ext = filename.substringAfterLast('.', "").lowercase()
+            when {
+                ext in listOf("jpg", "jpeg", "png", "gif", "bmp", "webp", "svg") ->
+                    """<img src="file://$filePath" alt="$filename" style="max-width:100%;border-radius:8px;margin:8px 0;">"""
+                ext in listOf("mp4", "webm", "mkv", "avi", "mov") ->
+                    """<video controls width="100%" style="max-width:100%;margin:8px 0;"><source src="file://$filePath" type="video/${if(ext=="mov")"mp4" else ext}"></video>"""
+                ext in listOf("mp3", "wav", "ogg", "flac", "aac", "m4a") ->
+                    """<audio controls style="width:100%;margin:8px 0;"><source src="file://$filePath" type="audio/${if(ext=="m4a")"mp4" else ext}"></audio>"""
+                else -> {
+                    val label = file.name
+                    """<div style="padding:8px 12px;border:1px solid var(--border);border-radius:8px;margin:8px 0;"><a href="file://$filePath">📎 $label</a></div>"""
+                }
+            }
+        } else {
+            // 文件不存在，显示占位符
+            """<div style="padding:8px 12px;border:1px dashed #999;border-radius:8px;margin:8px 0;color:#999;">📎 $filename (未找到)</div>"""
+        }
+    }
 }
 
 private fun buildTemplate(

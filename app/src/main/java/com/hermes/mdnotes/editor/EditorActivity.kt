@@ -1,12 +1,15 @@
 package com.hermes.mdnotes.editor
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
@@ -64,6 +67,21 @@ fun EditorScreen(
     val isSaving by viewModel.isSaving.collectAsState()
     val showPreview by viewModel.showPreview.collectAsState()
     val note by viewModel.note.collectAsState()
+    val notesDir = viewModel.notesDir
+
+    // 附件选择器
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val attachmentPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            if (viewModel.insertAttachment(it, context)) {
+                Toast.makeText(context, "附件已插入", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "附件插入失败", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
 
     // 初始加载
     LaunchedEffect(filePath) {
@@ -100,6 +118,13 @@ fun EditorScreen(
                     if (isSaving) {
                         Text("保存中…", style = MaterialTheme.typography.labelSmall)
                         Spacer(Modifier.width(8.dp))
+                    }
+
+                    // 插入附件
+                    IconButton(onClick = {
+                        attachmentPicker.launch("*/*")
+                    }) {
+                        Icon(Icons.Default.AttachFile, contentDescription = "插入附件")
                     }
 
                     // 切换编辑/预览
@@ -142,6 +167,7 @@ fun EditorScreen(
             // ── 预览模式 ──────────────────────────
             MarkdownPreview(
                 content = content,
+                notesDir = notesDir,
                 modifier = Modifier.padding(padding),
             )
         } else {

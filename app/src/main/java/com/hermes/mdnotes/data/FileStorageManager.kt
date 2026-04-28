@@ -1,5 +1,7 @@
 package com.hermes.mdnotes.data
 
+import android.content.Context
+import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -153,6 +155,47 @@ class FileStorageManager(private var notesDir: File) {
         return if (oldFile.renameTo(newFile)) {
             readNoteFull(newFile.absolutePath)
         } else null
+    }
+
+    // ── 附件管理 ──────────────────────────────────
+
+    fun getAttachmentsDir(): File {
+        val dir = File(notesDir, "附件")
+        if (!dir.exists()) dir.mkdirs()
+        return dir
+    }
+
+    /** 从 content URI 复制文件到附件目录，返回文件名 */
+    fun copyAttachment(uri: Uri, context: Context): String? {
+        return try {
+            val dir = getAttachmentsDir()
+            // 生成唯一文件名
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val originalName = context.contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idx = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                    if (idx >= 0) cursor.getString(idx) else null
+                } else null
+            } ?: "attachment"
+            val ext = originalName.substringAfterLast('.', "bin")
+            val safeName = "${timestamp}_${originalName.substringBeforeLast('.')}.$ext"
+            val destFile = File(dir, safeName)
+
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                destFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
+            }
+            safeName
+        } catch (e: Exception) {
+            android.util.Log.e("FileStorageManager", "copyAttachment failed", e)
+            null
+        }
+    }
+
+    fun resolveAttachment(filename: String): File? {
+        val file = File(getAttachmentsDir(), filename)
+        return if (file.exists()) file else null
     }
 
     // ── 搜索 ──────────────────────────────────────

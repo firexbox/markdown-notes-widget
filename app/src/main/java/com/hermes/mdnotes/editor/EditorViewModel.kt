@@ -1,6 +1,8 @@
 package com.hermes.mdnotes.editor
 
 import android.app.Application
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hermes.mdnotes.MdNotesApp
@@ -39,6 +41,21 @@ class EditorViewModel(application: Application) : AndroidViewModel(application) 
 
     private val _isNewNote = MutableStateFlow(false)
     val isNewNote = _isNewNote.asStateFlow()
+
+    // ── 附件 ─────────────────────────────────────
+
+    val notesDir: String?
+        get() = repository.getNotesDirectory()?.absolutePath
+
+    fun insertAttachment(uri: Uri, context: Context): Boolean {
+        val fm = repository.getFileManager()
+        val filename = fm.copyAttachment(uri, context) ?: return false
+        val insert = "![[$filename]]"
+        val current = _content.value
+        _content.value = if (current.isNotBlank()) "$current\n$insert" else insert
+        scheduleAutoSave()
+        return true
+    }
 
     // ── 自动保存 ─────────────────────────────────
 
