@@ -72,30 +72,36 @@ class NotesRepository private constructor(private val fileManager: FileStorageMa
         return fileManager.readNote(filePath)
     }
 
-    // ── 搜索 ──────────────────────────────────────
-
-    fun search(query: String) {
-        _searchQuery.value = query
-        _notes.value = fileManager.searchNotes(query)
-    }
-
-    fun clearSearch() {
-        _searchQuery.value = ""
-        refreshNotes()
-    }
-
-    /** 已过滤 + 已排序的笔记列表 */
+    /** 已过滤 + 已排序的笔记列表（使用缓存，避免重复读盘） */
     fun filteredNotes(
         query: String = "",
         sortByModified: Boolean = true
     ): List<Note> {
-        val base = if (query.isBlank()) fileManager.listNotesSync()
-        else fileManager.searchNotes(query)
+        val base = if (query.isBlank()) {
+            _notes.value
+        } else {
+            _notes.value.filter {
+                it.title.contains(query, ignoreCase = true) ||
+                it.preview.contains(query, ignoreCase = true)
+            }
+        }
         return if (sortByModified) {
             base.sortedByDescending { it.lastModified }
         } else {
             base.sortedBy { it.title.lowercase() }
         }
+    }
+
+    // 搜索时仍用完整搜索（包括文件内容搜索）
+    fun search(query: String) {
+        _searchQuery.value = query
+        _notes.value = if (query.isBlank()) fileManager.listNotesSync()
+        else fileManager.searchNotes(query)
+    }
+
+    fun clearSearch() {
+        _searchQuery.value = ""
+        _notes.value = fileManager.listNotesSync()
     }
 
     // ── 单例 ──────────────────────────────────────

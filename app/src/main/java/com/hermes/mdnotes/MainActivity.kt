@@ -188,33 +188,39 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
 
+        // 从设置页返回时：权限刚开启且首次启动未完成 → 自动弹目录选择
+        if (PreferencesManager.isFirstLaunch(this) && hasFullStorageAccess()) {
+            dirPickerLauncher.launch(null)
+            return
+        }
+
+        // 恢复目录设置
+        var needsRefresh = false
+        if (hasFullStorageAccess()) {
+            val savedDir = PreferencesManager.getNotesDirectory(this)
+            if (savedDir != null && savedDir != repository.getNotesDirectory()) {
+                repository.setNotesDirectory(savedDir)
+                needsRefresh = true
+            }
+        }
+
         // 编辑/新建返回 → 仅实际修改时滚到顶部
         if (editedFilePath != null) {
             val wasModified = when (editedFilePath) {
-                "_new_" -> true // 新建永远滚动
+                "_new_" -> true
                 else -> {
                     val f = File(editedFilePath!!)
                     f.exists() && f.lastModified() != editedFileLastModified
                 }
             }
             editedFilePath = null
-            if (wasModified) scrollTrigger.intValue++
-        }
-
-        // 从设置页返回时：权限刚开启且首次启动未完成 → 自动弹目录选择
-        if (PreferencesManager.isFirstLaunch(this) && hasFullStorageAccess()) {
-            dirPickerLauncher.launch(null)
-            return
-        }
-        // 从设置页返回时更新权限状态
-        if (hasFullStorageAccess()) {
-            val savedDir = PreferencesManager.getNotesDirectory(this)
-            if (savedDir != null) {
-                repository.setNotesDirectory(savedDir)
-                repository.refreshNotes()
+            if (wasModified) {
+                needsRefresh = true
+                scrollTrigger.intValue++
             }
         }
-        repository.refreshNotes()
+
+        if (needsRefresh) repository.refreshNotes()
         NotesWidgetReceiver.triggerUpdate(this)
     }
 
