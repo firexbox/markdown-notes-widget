@@ -4,7 +4,7 @@
 
 [Obsidian](https://obsidian.md) 是强大的 Markdown 笔记工具，但它**没有桌面 Widget**。当你把 Obsidian 仓库里的某个文件夹当作「备忘录」使用时，每次查看和新建备忘都需要打开 Obsidian App，不够快捷。
 
-本应用解决这个问题：**将 Obsidian 仓库中的任意文件夹（如 `备忘/`）设为存储目录，桌面 Widget 直接展示其中的 .md 文件**。
+本应用解决这个问题：**将 Obsidian 仓库中的任意文件夹（如 `备忘`）设为存储目录，桌面 Widget 直接展示其中的 .md 文件**。
 
 - Widget 显示备忘列表，一目了然
 - 一键新建备忘，自动遵循 Obsidian 命名规范（`yyyyMMdd_HHmmss_标题.md`）
