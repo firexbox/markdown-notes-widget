@@ -183,6 +183,25 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+
+        // 处理 Widget / 外部传入的文件路径
+        handleFileIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleFileIntent(intent)
+    }
+
+    /** 处理来自 Widget 等外部的打开文件 / 新建请求 */
+    private fun handleFileIntent(intent: Intent) {
+        val filePath = intent.getStringExtra(EditorActivity.EXTRA_FILE_PATH) ?: return
+        if (filePath == "_new_") {
+            openNewNote()
+        } else {
+            openEditor(filePath)
+        }
     }
 
     override fun onResume() {

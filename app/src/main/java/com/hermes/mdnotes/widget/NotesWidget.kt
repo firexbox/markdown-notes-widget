@@ -21,6 +21,7 @@ import androidx.glance.appwidget.lazy.items
 import androidx.glance.layout.*
 import androidx.glance.text.*
 import androidx.glance.unit.ColorProvider
+import com.hermes.mdnotes.MainActivity
 import com.hermes.mdnotes.data.NotesRepository
 import com.hermes.mdnotes.data.PreferencesManager
 import com.hermes.mdnotes.editor.EditorActivity
@@ -110,9 +111,9 @@ class NotesWidget : GlanceAppWidget() {
         note: com.hermes.mdnotes.data.Note,
         dateFmt: SimpleDateFormat
     ) {
-        val intent = Intent(context, EditorActivity::class.java).apply {
+        val intent = Intent(context, MainActivity::class.java).apply {
             putExtra(EditorActivity.EXTRA_FILE_PATH, note.filePath)
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
         }
 
         Column(
@@ -173,7 +174,10 @@ class NotesWidget : GlanceAppWidget() {
 
     @Composable
     private fun IconNewNote(context: Context) {
-        val intent = Intent(context, EditorActivity::class.java)
+        val intent = Intent(context, MainActivity::class.java).apply {
+            putExtra(EditorActivity.EXTRA_FILE_PATH, "_new_")
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
         Text(
             text = "➕",
             style = TextStyle(fontSize = 20.sp),
