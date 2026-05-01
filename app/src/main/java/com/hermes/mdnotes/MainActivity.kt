@@ -324,7 +324,18 @@ fun NotesListScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("📝 Markdown 笔记") },
+                title = {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            painter = androidx.compose.ui.res.painterResource(id = R.mipmap.ic_launcher),
+                            contentDescription = null,
+                            modifier = Modifier.size(28.dp),
+                            tint = androidx.compose.ui.graphics.Color.Unspecified
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text("Markdown 笔记")
+                    }
+                },
                 actions = {
                     IconButton(onClick = onSelectDirectory) {
                         Icon(Icons.Default.FolderOpen, contentDescription = "选择目录")

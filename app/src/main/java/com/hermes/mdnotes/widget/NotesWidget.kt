@@ -22,6 +22,7 @@ import androidx.glance.layout.*
 import androidx.glance.text.*
 import androidx.glance.unit.ColorProvider
 import com.hermes.mdnotes.MainActivity
+import com.hermes.mdnotes.R
 import com.hermes.mdnotes.data.NotesRepository
 import com.hermes.mdnotes.data.PreferencesManager
 import com.hermes.mdnotes.editor.EditorActivity
@@ -61,8 +62,14 @@ class NotesWidget : GlanceAppWidget() {
                         .padding(horizontal = 16.dp, vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Image(
+                        provider = ImageProvider(R.mipmap.ic_launcher),
+                        contentDescription = null,
+                        modifier = GlanceModifier.size(24.dp)
+                    )
+                    Spacer(modifier = GlanceModifier.width(8.dp))
                     Text(
-                        text = "📝 MD 笔记",
+                        text = "MD 笔记",
                         style = TextStyle(
                             color = GlanceTheme.colors.onSurface,
                             fontSize = 16.sp
